@@ -151,3 +151,9 @@ class FrozenBatchNorm2d(torch.nn.Module):
         scale = w * rv.rsqrt()
         bias = b - rm * scale
         return x * scale + bias
+
+
+def FreezedBn2D(num_features, eps=1e-5, momentum=0.1, affine=True,
+                track_running_stats=True):
+    return BatchNorm2D(num_features, eps, momentum, affine, track_running_stats, True)
+    
