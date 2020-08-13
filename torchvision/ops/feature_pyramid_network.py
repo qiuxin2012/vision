@@ -122,14 +122,19 @@ class FeaturePyramidNetwork(nn.Module):
 
         last_inner = self.get_result_from_inner_blocks(x[-1], -1)
         results = []
-        results.append(self.get_result_from_layer_blocks(last_inner, -1).to_dense().float())
+        if self.get_result_from_layer_blocks(last_inner, -1).is_mkldnn:
+            self.get_result_from_layer_blocks(last_inner, -1).to_dense().float()
+        results.append(self.get_result_from_layer_blocks(last_inner, -1))
 
         for idx in range(len(x) - 2, -1, -1):
             inner_lateral = self.get_result_from_inner_blocks(x[idx], idx)
+            if inner_lateral.is_mkldnn:
+                inner_lateral=inner_lateral.to_dense().float()
             feat_shape = inner_lateral.shape[-2:]
-            last_inner = last_inner.to_dense().float()
+            if last_inner.is_mkldnn:
+                last_inner = last_inner.to_dense().float()
             inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
-            last_inner = inner_lateral.to_dense().float() + inner_top_down
+            last_inner = inner_lateral + inner_top_down
             last_inner = last_inner.to_mkldnn(torch.bfloat16)
             results.insert(0, self.get_result_from_layer_blocks(last_inner, idx).to_dense().float())
 
